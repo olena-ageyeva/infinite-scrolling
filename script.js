@@ -1,77 +1,57 @@
-const quoteContainer = document.getElementById("quote-container");
-const quoteText = document.getElementById("quote");
-const authorText = document.getElementById("author");
-const twitterBtn = document.getElementById("twitter");
-const newQuoteBtn = document.getElementById("new-quote");
+const imageContainer = document.getElementById("image-container");
 const loader = document.getElementById("loader");
 
-//Show Loading
-function loading() {
-  loader.hidden = false;
-  quoteContainer.hidden = true;
-}
+let photos = [];
 
-//Hide Loading
-function complete() {
-  if (!loader.hidden) {
-    quoteContainer.hidden = false;
-    loader.hidden = true;
+// Unsplash API
+const count = 10;
+const apiKey = "bBneZCXaX8ofEOTqlw6U-tyvIhtwGCzMOpxLZmTo44k";
+const apiUrl = `https://api.unsplash.com/photos/random?client_id=${apiKey}&count=${count}`;
+
+// Helper Function to Set Attributes on DOM element
+function setAttributes(element, attributes) {
+  for (const key in attributes) {
+    element.setAttribute(key, attributes[key]);
   }
 }
 
-//Show New Quote
-function newQuote(apiQuotes) {
-  //Pick a random quote from array
-  const quote = apiQuotes[Math.floor(Math.random() * apiQuotes.length)];
-  const { author, text } = quote;
+//Create Elements for Links and Photos
+function displayPhotos(photos) {
+  photos.forEach((photo) => {
+    // Create <a> to link to Unsplash
+    const item = document.createElement("a");
 
-  if (author === "") {
-    authorText.innerText = "unknown";
-  } else {
-    authorText.innerText = author;
-  }
-  if (text > 120) {
-    quoteText.classList.add("long-quote");
-  } else {
-    quoteText.classList.remove("long-quote");
-  }
-  quoteText.innerText = text;
+    setAttributes(item, { href: photo.links.html, target: "_blank" });
+    const img = document.createElement("img");
 
-  console.log(quote);
+    setAttributes(img, {
+      src: photo.urls.regular,
+      alt: photo.alt_description,
+      title: photo.alt_description,
+    });
+    item.appendChild(img);
+    imageContainer.appendChild(item);
+  });
 }
 
-//Get Quote From API
-async function getQuote() {
-  loading();
-  //const proxyUrl = "https://cors-anywhere.herokuapp.com/";
-  const proxyUrl = "https://sheltered-badlands-52292.herokuapp.com/";
-  // const apiUrl =
-  //   "https://api.forismatic.com/api/1.0/?method=getQuote&lang=en&format=json";
-  const apiUrl = "https://type.fit/api/quotes";
-
+//Get photos from Unsplash API
+async function getPhotos() {
   try {
-    const response = await fetch(proxyUrl + apiUrl);
+    const response = await fetch(apiUrl);
+    const photos = await response.json();
+    displayPhotos(photos);
+  } catch (error) {}
+}
 
-    const apiQuotes = await response.json();
-
-    newQuote(apiQuotes);
-
-    complete();
-  } catch (error) {
-    //getQuote();
+//check if scrolling near bottom, load more images
+window.addEventListener("scroll", () => {
+  if (
+    window.innerHeight + window.scrollY >=
+    document.body.offsetHeight - 1000
+  ) {
+    getPhotos();
   }
-}
-
-function tweetQuote() {
-  const quote = quoteText.innerText;
-  const author = authorText.innerText;
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${quote} - ${author}`;
-  window.open(twitterUrl, "_blank");
-}
-
-//Event Listeners
-newQuoteBtn.addEventListener("click", getQuote);
-twitterBtn.addEventListener("click", tweetQuote);
+});
 
 //On Load
-getQuote();
+getPhotos();
